@@ -1,0 +1,46 @@
+# Poisson Regression via Simulation
+m <- 100
+n <- 100
+B0 <- 0.2
+LRTStat <- numeric(n)
+ciWidth <- 2
+SeedVec <- rnorm(n,mean=5, sd=10)
+Conf_Int <- matrix(rep(0,2*n), nrow=100, ncol=2)
+BHat <- numeric(n)
+se <- numeric(n)
+
+for(i in 1:n){
+  set.seed(SeedVec[i])
+  x = seq(-10, 10, len = 40)
+  x02 = B0*x
+  off = rep(c(1,-1), c(25, length(x) - 25))
+  #Generate a list of 40 Poisson distributed samples
+  y = rpois(length(x), exp(off + 0.5 +0.2*x))
+  #Estimate model with fixed slope equals 0.2
+  model.int <- glm(y ~ offset(off) + offset(x02), family='poisson')
+  #Run a Poisson Regression model and extract the estimated coefficient and standard error of x 
+  model.pois <- glm(y  ~ x + offset(off), family='poisson')
+  BHat[i] <- summary(model.pois)$coefficients[2,1]
+  se[i] <- summary(model.pois)$coefficients[2,2]
+  #construct the confidence interval
+  Conf_Int[i,] <- c(BHat[i] - ciWidth*se[i], BHat[i] + ciWidth*se[i])
+  #Calculate the Likelihood Ratio test statistic
+  #LRTStat[i] <- -2*(Poisson_LogL(x,y,BHat[i]) - Poisson_LogL(x,y,B0))
+  LRTStat[i] <- 2*(logLik(model.pois) - logLik(model.int))
+}
+#colnames(Conf_Int) <- c("Lower Limit", "Upper Limit")
+#Calculate the proportion of C.Is that contain 0.2
+CovProb <- mean(Conf_Int[,1] < 0.2 & Conf_Int[,2] > 0.2)
+Q1Summary <- as.data.frame(rbind(summary(BHat), summary(Conf_Int[,1]), summary(Conf_Int[,2]), c(CovProb, NA, NA, NA, NA, NA)), row.names=c('Beta Estimate','2 SE CI Lower Limit','2 SE CI Upper Limit', "Coverage Probability"))
+# 
+#Part 2
+xValue112 <- seq(0.14, 0.265, len = 100000)
+hist(BHat, prob=T, xlab="Beta Hat", main="Density Plot of Beta")
+plot(density(BHat), xlab="Beta Hat", main="Density Plot of Beta")
+hist(BHat, xlab="Beta Hat", main="Density Plot of Beta", breaks=50, prob=T)
+lines(xValue112, dnorm(xValue112, mean=0.2, sd=sd(BHat)), col="red")
+
+# #Part 3
+xValue113 <- seq(0, 6, len = 100000)
+hist(LRTStat, xlab="LRT Statistic", main="Density Plot of LRT Statistic", breaks=50, prob=T)
+lines(xValue113, dchisq(xValues1, df=1), col = "red" )
