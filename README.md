@@ -1,4 +1,3 @@
-# This folder contains the codes of some of the Generalized Linear Models I worked on
 * GammaRegression - gamma regression on the data set 'fruitfly' from the R package 'faraway'
 * LogisticRegression - logistic regression on the 2014 American National Youth Tobacco
 Survey
