@@ -1,0 +1,33 @@
+# Gamma Regression
+data('fruitfly', package='faraway')
+fruitfly$activity <- factor(fruitfly$activity, levels=levels(fruitfly$activity), labels(c(0,1,2,3,4)))
+#Gamma GLM
+model.fruitfly <- glm(longevity ~ thorax + activity, family=Gamma(link='log'), data=fruitfly)
+
+#GLM with no explanatory variables
+model.null <- glm(longevity ~ 1, family=Gamma(link='log'), data=fruitfly)
+
+#Check if "thorax" and "activity" is useful in prediciting "lonbgevity"
+print(anova(model.null, model.fruitfly, test="LRT"))
+
+#Residual deviance test
+qchisq(0.95,124 - 5)
+summary(model.fruitfly)$deviance/summary(model.fruitfly)$dispersion
+
+shapeEst = 1/summary(model.fruitfly)$dispersion
+scaleEst = exp(model.fruitfly$coef["(Intercept)"] + median(fruitfly$thorax)*model.fruitfly$coef["thorax"])/shapeEst ##log(intercept) is the estimated mean
+#
+SumFly <- summary(model.fruitfly)$coef
+TableFly <- as.data.frame(rbind(SumFly, shape=c(shapeEst, NA, NA, NA), scale=c(scaleEst, NA, NA, NA)), digits=4)
+
+CoefFly <- as.data.frame(cbind(exp(summary(model.fruitfly)$coef[,1]), exp(confint(model.fruitfly))))
+colnames(CoefFly) <- c('$\\hat{\\beta}$', "$\\mu - t*se_{\\hat{\\beta}}$", "$\\mu - t*se_{\\hat{\\beta}}$")
+
+#Plot the histogram to see if it looks like Gamma distribution
+hist(fruitfly$longevity, prob = TRUE, ylim = range(0,0.04), main = "", xlab = "Longevity of Fruit Flies")
+#plot(density(fruitfly$longevity), ylim = range(0,0.035))
+xValueFly = seq(0, 100, len = 1000)
+lines(xValueFly , dgamma(xValueFly , shape =shapeEst, scale = scaleEst), col = "red")
+lines(xValueFly , dnorm(xValueFly , mean=mean(fruitfly$longevity), sd=sd(fruitfly$longevity)), col = "blue")
+lines(xValueFly , dnorm(xValueFly , mean=shapeEst*scaleEst, sd=sqrt(shapeEst*scaleEst^2)), col = "green")
+legend(x=90, y=0.04, c("Gamma", "Normal"), lty=c(1,1), lwd=c(1.5,1.5), col=c("red","blue"), cex=0.5)
