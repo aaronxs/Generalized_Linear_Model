@@ -1,0 +1,28 @@
+# Logistic Regression
+load("C:/Users/Aaron-/Desktop/2016 Winter Courses/STA2201/Homework 1/Report/smoke.RData")
+library(plyr)
+
+#################################   Question 1
+q1data <- ddply(subset(smoke, chewing_tobacco_snuff_or == TRUE), .(Race, RuralUrban), summarise, count=length(chewing_tobacco_snuff_or))
+q1data  <- na.exclude(q1data)
+q1matrix <- matrix(q1data$count, ncol=2, byrow=T)
+colnames(q1matrix) <- levels(q1data$RuralUrban)
+rownames(q1matrix) <- levels(q1data$Race)
+q1prop <- prop.table(q1matrix, margin=2)
+par(mar=c(5.1, 4.1, 4.1, 7.1), xpd=TRUE)
+barplot(q1prop, col=heat.colors(length(rownames(q1prop))), width=1.5, ylab="Proportion of Population", xlab="Geographic Region")
+legend("topright",inset=c(-0.1,-0.1), fill=heat.colors(length(rownames(q1prop))), legend=rownames(q1prop), cex=0.6)
+model.1 <- glm(chewing_tobacco_snuff_or ~ Race + RuralUrban, family=binomial, data=smoke)
+R1Summary <- data.frame(summary(model.1)$coef)
+model.1coef <- data.frame(cbind(exp(R1Summary[,1]), exp(confint(model.1))))
+colnames(model.1coef) <- c('$exp(\\hat{\\beta})$', "$exp(\\mu - t*se(\\hat{\\beta})$)", "$exp(\\mu + t*se(\\hat{\\beta})$)")
+
+#################################   Question 2
+model.2 <- glm(ever_tobacco_hookah_or_wa ~ Age + Sex + Race + RuralUrban, family=binomial, data=smoke)
+R2Summary <- data.frame(summary(model.2)$coef)
+
+#################################   Secondary problem
+model.sec <- glm(chewing_tobacco_snuff_or ~ Age + Sex + Race, family=binomial, data=smoke)
+RSecSummary <- data.frame(summary(model.sec)$coef)
+model.seccoef <- data.frame(cbind(exp(RSecSummary[,1]), exp(confint(model.sec))))
+colnames(model.seccoef) <- c('$exp(\\hat{\\beta})$', "$exp(\\mu - t*se(\\hat{\\beta})$)", "$exp(\\mu + t*se(\\hat{\\beta})$)")
